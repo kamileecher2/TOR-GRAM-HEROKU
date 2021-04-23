@@ -233,28 +233,29 @@ function get_update(){
   }
 }
 
-cookie_str=document.cookie
-if (cookie_str.includes("uid_token")==true){
-  username=cookie_str.split("uid_token=")[1]
-  var xmlHttp = new XMLHttpRequest();
-  xmlHttp.open( "GET", "/check-user?username="+username, false ); // false for synchronous request
-  xmlHttp.send();
-  if (xmlHttp.responseText=="true"){
-    document.getElementById("drivebtn").text = "Local Storage [ "+username+" ]";
-    document.getElementById("drivebtn").href = "/drive?remote="+username;
-    document.getElementById("loginbtn").style.display="none"
-    document.getElementById("drive_trans_btn").style.display="block"
+document.addEventListener('DOMContentLoaded',()=>{
+  cookie_str = document.cookie
+  if (cookie_str.includes("uid_token")) {
+    username = cookie_str.split("uid_token=")[1]
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open("GET", "/check-user?username=" + username, false); // false for synchronous request
+    xmlHttp.send();
+    if (xmlHttp.responseText == "true") {
+      document.getElementById("drivebtn").text = "Local Storage [ " + username + " ]";
+      document.getElementById("drivebtn").href = "/drive?remote=" + username;
+      document.getElementById("loginbtn").style.display = "none"
+      document.getElementById("drive_trans_btn").style.display = "block"
+    }
+    else {
+      document.getElementById("server-results").innerHTML = "Warning : Your last Login has been cleared from memory. Please login again .... ";
+    }
   }
-  else{
-    document.getElementById("server-results").innerHTML="Warning : Your last Login has been cleared from memory. Please login again .... ";
+  else {
+    document.getElementById("drive_trans_btn").style.display = "none"
   }
-}
-else
-{
-  document.getElementById("drive_trans_btn").style.display="none"
-}
 
-setInterval(get_update, 2000);
+  setInterval(get_update, 2000);
+})
 
 </script>
 

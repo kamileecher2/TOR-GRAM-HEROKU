@@ -3,9 +3,10 @@ import subprocess
 import asyncio
 import os
 import random
-from flask import json,Flask, render_template, request, redirect, make_response, session,url_for,send_from_directory
+from flask import json,Flask, render_template, request, redirect, make_response, session,url_for,send_from_directory, Response
 app = Flask(__name__)
 
+allowed=[]
 #how too get environment varible values -->  " os.environ['S3_KEY'] "
 aria2 = aria2p.API(
         aria2p.Client(
@@ -39,6 +40,7 @@ def run():
 @app.route('/',methods = ['GET'])
 def home():
     uid_token = request.cookies.get('uid_token')
+    print(uid_token)
     if 'aria2c' in str(subprocess.Popen(['ps -ax'],shell=True,stdout=subprocess.PIPE).stdout.read()).replace('\n','<br>'):
         return render_template("index.html")
     else:
@@ -49,7 +51,8 @@ def home():
 def check_user():
     username=request.args.get('username')
     user_list=[i.replace("b'","").replace("'","") for i in str(subprocess.Popen(["rclone","listremotes"], stdout=subprocess.PIPE).communicate()[0]).split(":\\n")][:-1]
-    if username in user_list:
+    #print(user_list, allowed,'-----------LOGS------')
+    if username in user_list or username in allowed:
         return "true"
     else:
         return "false"
@@ -207,23 +210,31 @@ def bash():
         return str(subprocess.Popen([q],shell=True,stdout=subprocess.PIPE).stdout.read()).replace('\n','<br>')
 
 
-
 # Login with rclone
 @app.route('/login',methods = ['GET'])
 def login():
         code = request.args.get('login_code')
         username = request.args.get('username')
+        #print((code, username))
         if code:
             cmd='echo "'+code+'" | rclone config create '+username+' drive config_is_local false'
             subprocess.Popen(cmd,stdout=subprocess.PIPE,stdin=subprocess.PIPE,stderr=subprocess.STDOUT,shell=True)
+            #print('in')
+            allowed.append(username)
             resp = make_response(render_template('index.html',forward="true"))
             resp.set_cookie('uid_token', username)
+            #return redirect('/')
             return resp
         else:
             username_str="user"+str(random.randrange(101, 999, 3))
             return render_template('login.html',username=username_str)
 
-
+@app.route('/logout')
+def logout():
+    #resp = make_response(render_template('index.html',forward="true"))
+    Response.delete_cookie('uid_token',path='/')
+    return redirect('/login')
+    
 
 if __name__ == '__main__':
     app.run(debug=True)
